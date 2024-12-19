@@ -2,66 +2,102 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 )
 
-// 1 5 7 9 11
-// 1 2 5 4 7
-// 1 2 3 10
-// 10 1 2 3 4 5
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
 
-func isSafe2(row []int) bool {
+func notSafe(a1 int, a2 int) bool {
+	diff := abs(a1 - a2)
+	return diff == 0 || diff > 3
+}
 
-	// middle safety
-	isIncreasing := row[1] < row[2]
+func canRecoverBruteForce(row []int) bool {
+	if isRowSafe(row) {
+		return true
+	}
 
-	for i := 1; i < len(row)-2; i++ {
-		if isIncreasing {
-			if row[i] >= row[i+1] {
-				return false
-			}
-
-			if row[i+1]-row[i] > 3 {
-				return false
-			}
-		} else {
-			if row[i] <= row[i+1] {
-				return false
-			}
-
-			if row[i]-row[i+1] > 3 {
-				return false
-			}
+	for i := 0; i < len(row)-1; i++ {
+		if isRowSafeIgnoreIdx(row, i) {
+			return true
 		}
 	}
+
+	if isRowSafeIgnoreIdx(row, len(row)-1) {
+		return true
+	}
+
+	return false
+}
+
+// 8 6 4 4 1
+func isRowSafe(row []int) bool {
+	increasing, decreasing := true, true
+
+	for i := 0; i < len(row)-1; i++ {
+		if row[i] < row[i+1] {
+			decreasing = false
+		}
+		if row[i] > row[i+1] {
+			increasing = false
+		}
+
+		if !decreasing && !increasing {
+			return false
+		}
+
+		if notSafe(row[i], row[i+1]) {
+			return false
+		}
+	}
+
 	return true
 }
 
-func isSafe(row []int) bool {
-	isIncreasing := row[0] < row[1]
+func isRowSafeIgnoreIdx(row []int, ignoreIdx int) bool {
+	increasing, decreasing := true, true
 
 	for i := 0; i < len(row)-1; i++ {
-		if isIncreasing {
-			if row[i] >= row[i+1] {
-				return false
+		current, next := i, i+1
+		if i+1 == ignoreIdx {
+			if i+2 == len(row) {
+				continue
 			}
+			next = i + 2
+		}
 
-			if row[i+1]-row[i] > 3 {
-				return false
+		if i == ignoreIdx {
+			if i == 0 {
+				continue
 			}
-		} else {
-			if row[i] <= row[i+1] {
-				return false
-			}
+			current = i - 1
+		}
 
-			if row[i]-row[i+1] > 3 {
-				return false
-			}
+		if row[current] < row[next] {
+			decreasing = false
+		}
+		if row[current] > row[next] {
+			increasing = false
+		}
+
+		if !decreasing && !increasing {
+			return false
+		}
+
+		if notSafe(row[current], row[next]) {
+			return false
 		}
 	}
+
 	return true
 }
 
@@ -96,15 +132,18 @@ func main() {
 	count := 0
 	count2 := 0
 	for _, row := range reports {
-		if isSafe(row) {
+		if isRowSafe(row) {
 			count += 1
 		}
 
-		if isSafe2(row) {
+		if canRecoverBruteForce(row) {
+			fmt.Printf("safe row %+v\n", row)
 			count2 += 1
+		} else {
+			fmt.Printf("unsafe row %+v\n", row)
 		}
 	}
 
-	log.Println("Part1: total safe rows count is ", count)
-	log.Println("Part2: total safe rows count is ", count)
+	fmt.Printf("Part1: total safe rows count is %d out of %d rows\n", count, len(reports))
+	fmt.Printf("Part2: total safe rows count is %d out of %d rows\n", count2, len(reports))
 }
